@@ -6,6 +6,45 @@
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <title>🦕 DinoLand Sidework</title>
+
+<!-- Firebase -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getDatabase, ref, onValue, set, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+  // ── PASTE YOUR FIREBASE CONFIG HERE ──
+  const firebaseConfig = {
+    apiKey:            "AIzaSyCQyXMKypLIQcZCDhIVpdGAyeLt0Nv_p6U",
+    authDomain:        "dinoland-sideworks.firebaseapp.com",
+    databaseURL:       "https://dinoland-sideworks-default-rtdb.firebaseio.com",
+    projectId:         "dinoland-sideworks",
+    storageBucket:     "dinoland-sideworks.firebasestorage.app",
+    messagingSenderId: "58513558786",
+    appId:             "1:58513558786:web:79b983d7b985ebd6b3061b"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db  = getDatabase(app);
+
+  // expose to window so rest of script can use it
+  window._db     = db;
+  window._ref    = ref;
+  window._set    = set;
+  window._remove = remove;
+  window._dbReady = true;
+
+  // listen for real-time changes
+  onValue(ref(db, 'sidework'), (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+      window._state = data;
+    } else {
+      window._state = { people: [], assignments: {} };
+    }
+    window.renderAll && window.renderAll();
+  });
+</script>
+
 <style>
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap');
 
@@ -40,6 +79,25 @@ body {
   -webkit-font-smoothing: antialiased;
   overscroll-behavior: none;
 }
+
+/* ── CONNECTING OVERLAY ── */
+#connecting {
+  position: fixed; inset: 0; background: var(--bg);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  z-index: 999; gap: 14px;
+}
+#connecting.hidden { display: none; }
+.spinner {
+  width: 36px; height: 36px;
+  border: 3px solid var(--border);
+  border-top-color: var(--amber);
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+#connecting p { color: var(--muted); font-size: .88rem; }
+#connect-err { color: var(--red); font-size: .82rem; display: none; text-align: center; max-width: 280px; }
 
 /* ── HEADER ── */
 header {
@@ -99,30 +157,22 @@ header {
 .empty-state { grid-column:1/-1; text-align:center; padding:48px 16px; color:var(--muted); font-size:.88rem; }
 .empty-state .icon { font-size:2.5rem; display:block; margin-bottom:10px; }
 
-/* ── ADMIN LOCKED GATE ── */
+/* ── ADMIN GATE ── */
 #admin-gate {
   display: flex; flex-direction: column; align-items: center;
   padding: 48px 24px; text-align: center;
 }
 #admin-gate .gate-icon { font-size: 2.5rem; margin-bottom: 10px; }
 #admin-gate p { color: var(--muted); font-size: .88rem; margin-bottom: 20px; }
-.gate-box {
-  background: var(--surf); border: 1px solid var(--border);
-  border-radius: var(--r); padding: 20px; width: 100%; max-width: 320px;
-}
+.gate-box { background: var(--surf); border: 1px solid var(--border); border-radius: var(--r); padding: 20px; width: 100%; max-width: 320px; }
 .gate-box h2 { font-size: .8rem; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); margin-bottom: 14px; }
 .gate-error { color: var(--red); font-size: .78rem; margin-top: 8px; min-height: 16px; }
 
-/* ── ADMIN PANEL ── */
 #admin-panel { display: none; }
-
-.admin-bar {
-  display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 14px;
-}
+.admin-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
 .admin-bar span { font-size: .75rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .5px; }
 
-/* ── SHARED FORM STYLES ── */
+/* ── FORMS ── */
 .section { background: var(--surf); border: 1px solid var(--border); border-radius: var(--r); padding: 16px; margin-bottom: 12px; }
 .section-title { font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
 
@@ -145,17 +195,12 @@ select {
 .row { display: flex; gap: 8px; }
 .row input { flex: 1; }
 
-.btn {
-  display: block; width: 100%; padding: 13px; border: none;
-  border-radius: var(--rs); font-family: 'DM Sans', sans-serif;
-  font-size: .95rem; font-weight: 700; cursor: pointer; text-align: center;
-  transition: opacity .15s, transform .1s; -webkit-appearance: none;
-}
+.btn { display: block; width: 100%; padding: 13px; border: none; border-radius: var(--rs); font-family: 'DM Sans', sans-serif; font-size: .95rem; font-weight: 700; cursor: pointer; text-align: center; transition: opacity .15s, transform .1s; -webkit-appearance: none; }
 .btn:active { opacity: .8; transform: scale(.98); }
-.btn-amber  { background: var(--amber); color: #161310; }
-.btn-ghost  { background: var(--surf2); color: var(--muted); border: 1px solid var(--border); }
-.btn-red    { background: transparent; color: var(--red); border: 1px solid var(--red); }
-.btn-sm     { display: inline-block; width: auto; padding: 6px 12px; font-size: .78rem; border-radius: 6px; }
+.btn-amber { background: var(--amber); color: #161310; }
+.btn-ghost { background: var(--surf2); color: var(--muted); border: 1px solid var(--border); }
+.btn-red   { background: transparent; color: var(--red); border: 1px solid var(--red); }
+.btn-sm    { display: inline-block; width: auto; padding: 6px 12px; font-size: .78rem; border-radius: 6px; }
 .btn-logout { background: none; border: 1px solid var(--border); color: var(--muted); font-size: .75rem; font-weight: 600; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-family: 'DM Sans', sans-serif; }
 
 .person-list { display: flex; flex-direction: column; gap: 6px; max-height: 200px; overflow-y: auto; }
@@ -174,35 +219,17 @@ select {
 .danger .section-title { color: var(--red); }
 .danger-desc { font-size: .8rem; color: var(--muted); margin-bottom: 8px; }
 
-/* change pw section */
-.changepw-section { background: var(--surf); border: 1px solid var(--border); border-radius: var(--r); padding: 16px; margin-bottom: 12px; }
-.changepw-section .section-title { font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
-
 /* ── MODAL ── */
-.modal-backdrop {
-  position: fixed; inset: 0; background: rgba(0,0,0,.75);
-  display: flex; align-items: flex-end; justify-content: center;
-  z-index: 200; padding-bottom: var(--safe-b);
-}
+.modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.75); display: flex; align-items: flex-end; justify-content: center; z-index: 200; padding-bottom: var(--safe-b); }
 .modal-backdrop.hidden { display: none; }
-.modal {
-  background: var(--surf); border: 1px solid var(--bord2);
-  border-radius: 18px 18px 0 0;
-  padding: 20px 20px calc(20px + var(--safe-b));
-  width: 100%; max-width: 480px;
-}
+.modal { background: var(--surf); border: 1px solid var(--bord2); border-radius: 18px 18px 0 0; padding: 20px 20px calc(20px + var(--safe-b)); width: 100%; max-width: 480px; }
 .modal h3 { font-size: 1rem; font-weight: 700; margin-bottom: 4px; }
 .modal-name { color: var(--amber); font-size: .88rem; font-weight: 600; margin-bottom: 16px; }
 .modal-btns { display: flex; gap: 8px; margin-top: 14px; }
 .modal-btns .btn { flex: 1; }
 
 /* ── TOAST ── */
-.toast {
-  position: fixed; bottom: calc(20px + var(--safe-b)); left: 50%; transform: translateX(-50%);
-  background: var(--green); color: #161310; font-weight: 700; font-size: .85rem;
-  padding: 10px 20px; border-radius: 20px; z-index: 300;
-  opacity: 0; transition: opacity .2s; white-space: nowrap; pointer-events: none;
-}
+.toast { position: fixed; bottom: calc(20px + var(--safe-b)); left: 50%; transform: translateX(-50%); background: var(--green); color: #161310; font-weight: 700; font-size: .85rem; padding: 10px 20px; border-radius: 20px; z-index: 300; opacity: 0; transition: opacity .2s; white-space: nowrap; pointer-events: none; }
 .toast.show { opacity: 1; }
 .toast.err  { background: var(--red); color: #fff; }
 
@@ -210,6 +237,13 @@ select {
 </style>
 </head>
 <body>
+
+<!-- CONNECTING OVERLAY -->
+<div id="connecting">
+  <div class="spinner"></div>
+  <p>Connecting…</p>
+  <p id="connect-err"></p>
+</div>
 
 <!-- HEADER -->
 <header>
@@ -234,7 +268,6 @@ select {
 <!-- ADMIN TAB -->
 <div class="page" id="page-admin">
 
-  <!-- GATE: shown when locked -->
   <div id="admin-gate">
     <div class="gate-icon">🔒</div>
     <p>Admin only. Enter password to make changes.</p>
@@ -249,15 +282,12 @@ select {
     </div>
   </div>
 
-  <!-- PANEL: shown when unlocked -->
   <div id="admin-panel">
-
     <div class="admin-bar">
       <span>🛠 Admin Panel</span>
       <button class="btn-logout" onclick="gateLogout()">Lock 🔒</button>
     </div>
 
-    <!-- Add Server -->
     <div class="section">
       <div class="section-title">👥 Add Server</div>
       <div class="field">
@@ -270,13 +300,9 @@ select {
       <div id="people-list" class="person-list"></div>
     </div>
 
-    <!-- Assign -->
     <div class="section">
       <div class="section-title">🎯 Assign Sidework</div>
-      <div class="field">
-        <label>Server</label>
-        <select id="sel-person"></select>
-      </div>
+      <div class="field"><label>Server</label><select id="sel-person"></select></div>
       <div class="field">
         <label>Sidework</label>
         <select id="sel-sidework" onchange="toggleAmt(this.value,'sw-amt')">
@@ -297,32 +323,20 @@ select {
       <button class="btn btn-amber" onclick="assignSidework()">Assign</button>
     </div>
 
-    <!-- All Assignments -->
     <div class="section">
       <div class="section-title">📝 All Assignments</div>
       <div id="assign-list" class="assign-list"></div>
     </div>
 
-    <!-- Change Password -->
-    <div class="changepw-section">
+    <div class="section">
       <div class="section-title">🔑 Change Password</div>
-      <div class="field">
-        <label>Current Password</label>
-        <input type="password" id="cp-cur" placeholder="Current password"/>
-      </div>
-      <div class="field">
-        <label>New Password</label>
-        <input type="password" id="cp-new" placeholder="New password"/>
-      </div>
-      <div class="field">
-        <label>Confirm New Password</label>
-        <input type="password" id="cp-cfm" placeholder="Repeat new password"/>
-      </div>
+      <div class="field"><label>Current Password</label><input type="password" id="cp-cur" placeholder="Current password"/></div>
+      <div class="field"><label>New Password</label><input type="password" id="cp-new" placeholder="New password"/></div>
+      <div class="field"><label>Confirm New Password</label><input type="password" id="cp-cfm" placeholder="Repeat new password"/></div>
       <button class="btn btn-ghost" onclick="changePassword()">Save New Password</button>
       <div class="gate-error" id="cp-error"></div>
     </div>
 
-    <!-- Reset -->
     <div class="section danger">
       <div class="section-title">⚠️ Reset</div>
       <p class="danger-desc">Clear today's sidework (keeps people).</p>
@@ -330,9 +344,8 @@ select {
       <p class="danger-desc">Remove everyone and start fresh.</p>
       <button class="btn btn-red" onclick="clearAll()">Clear Everything</button>
     </div>
-
-  </div><!-- /admin-panel -->
-</div><!-- /page-admin -->
+  </div>
+</div>
 
 <!-- EDIT MODAL -->
 <div class="modal-backdrop hidden" id="modal" onclick="closeModal(event)">
@@ -366,12 +379,11 @@ select {
 <div class="toast" id="toast"></div>
 
 <script>
-// ── PASSWORD ──
+// ── PASSWORD (stored in Firebase too) ──
 const DEFAULT_PW = '1234';
-function getPW() { return localStorage.getItem('dino_pw') || DEFAULT_PW; }
-function setPW(p) { localStorage.setItem('dino_pw', p); }
+function getPW() { return window._state && window._state.password ? window._state.password : DEFAULT_PW; }
 
-// ── ADMIN SESSION (tab-only) ──
+// ── ADMIN SESSION ──
 let adminUnlocked = false;
 
 function gateLogin() {
@@ -396,7 +408,7 @@ function gateLogout() {
 function showAdminPanel() {
   document.getElementById('admin-gate').style.display = 'none';
   document.getElementById('admin-panel').style.display = 'block';
-  renderAll();
+  renderAdminParts();
 }
 
 function showAdminGate() {
@@ -409,15 +421,25 @@ function changePassword() {
   const nw  = document.getElementById('cp-new').value.trim();
   const cfm = document.getElementById('cp-cfm').value.trim();
   const err = document.getElementById('cp-error');
-  if (cur !== getPW())    { err.textContent = 'Current password is wrong.'; return; }
-  if (!nw)                { err.textContent = 'New password cannot be empty.'; return; }
-  if (nw !== cfm)         { err.textContent = "Passwords don't match."; return; }
-  setPW(nw);
+  if (cur !== getPW())  { err.textContent = 'Current password is wrong.'; return; }
+  if (!nw)              { err.textContent = 'New password cannot be empty.'; return; }
+  if (nw !== cfm)       { err.textContent = "Passwords don't match."; return; }
+  dbSet('sidework/password', nw);
   document.getElementById('cp-cur').value = '';
   document.getElementById('cp-new').value = '';
   document.getElementById('cp-cfm').value = '';
   err.textContent = '';
   toast('✓ Password changed!');
+}
+
+// ── FIREBASE HELPERS ──
+function dbSet(path, value) {
+  if (!window._dbReady) return;
+  window._set(window._ref(window._db, path), value);
+}
+function dbRemove(path) {
+  if (!window._dbReady) return;
+  window._remove(window._ref(window._db, path));
 }
 
 // ── SIDEWORK CONFIG ──
@@ -432,10 +454,7 @@ const SW_META = {
   'Waitstation': { stripe:'s-ws', badge:'b-ws', icon:'🍽️' },
 };
 
-// ── STATE ──
-let state = { people: [], assignments: {} };
-function save() { try { localStorage.setItem('dino_sw_v2', JSON.stringify(state)); } catch(e) {} }
-function load() { try { const d = localStorage.getItem('dino_sw_v2'); if (d) state = JSON.parse(d); } catch(e) {} }
+window._state = { people: [], assignments: {} };
 
 // ── CLOCK ──
 function tick() {
@@ -453,7 +472,6 @@ document.querySelectorAll('.tab').forEach(btn => {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     btn.classList.add('active');
     document.getElementById('page-' + btn.dataset.tab).classList.add('active');
-    // if switching to admin, show correct view
     if (btn.dataset.tab === 'admin') {
       adminUnlocked ? showAdminPanel() : showAdminGate();
     }
@@ -462,7 +480,7 @@ document.querySelectorAll('.tab').forEach(btn => {
 
 // ── HELPERS ──
 function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-function uid() { return Math.random().toString(36).slice(2,9); }
+function uid()  { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
 
 let toastTimer;
 function toast(msg, isErr) {
@@ -478,21 +496,30 @@ function toggleAmt(val, groupId) {
 }
 
 function swLabel(id) {
-  const a = state.assignments[id];
+  const s = window._state;
+  const a = s.assignments && s.assignments[id];
   if (!a) return null;
   if (a.sidework === 'Silverware' && a.amount) return `Silverware ×${a.amount}`;
   return a.sidework;
 }
 
+function getPeople() {
+  const s = window._state;
+  if (!s.people) return [];
+  if (Array.isArray(s.people)) return s.people.filter(Boolean);
+  return Object.values(s.people).filter(Boolean);
+}
+
 // ── BOARD ──
 function renderBoard() {
   const el = document.getElementById('board');
-  if (!state.people.length) {
+  const people = getPeople();
+  if (!people.length) {
     el.innerHTML = `<div class="empty-state"><span class="icon">🦕</span>No servers added yet.</div>`;
     return;
   }
-  el.innerHTML = state.people.map(p => {
-    const a = state.assignments[p.id];
+  el.innerHTML = people.map(p => {
+    const a = window._state.assignments && window._state.assignments[p.id];
     const meta = a ? SW_META[a.sidework] : null;
     const label = swLabel(p.id);
     return `
@@ -501,8 +528,7 @@ function renderBoard() {
         <div class="card-body">
           <div class="card-name">${esc(p.name)}</div>
           ${a
-            ? `<div class="card-lbl">Sidework</div>
-               <span class="card-badge ${meta ? meta.badge : 'b-no'}">${meta ? meta.icon+' ':''} ${esc(label)}</span>`
+            ? `<div class="card-lbl">Sidework</div><span class="card-badge ${meta ? meta.badge : 'b-no'}">${meta ? meta.icon+' ':''} ${esc(label)}</span>`
             : `<div class="card-empty">Not assigned</div>`}
         </div>
       </div>`;
@@ -512,8 +538,9 @@ function renderBoard() {
 // ── PEOPLE ──
 function renderPeople() {
   const el = document.getElementById('people-list');
-  if (!state.people.length) { el.innerHTML = `<p style="color:var(--dim);font-size:.8rem;padding:4px 0">No servers yet.</p>`; return; }
-  el.innerHTML = state.people.map(p => `
+  const people = getPeople();
+  if (!people.length) { el.innerHTML = `<p style="color:var(--dim);font-size:.8rem;padding:4px 0">No servers yet.</p>`; return; }
+  el.innerHTML = people.map(p => `
     <div class="person-row">
       <span>${esc(p.name)}</span>
       <button class="btn-x" onclick="removePerson('${p.id}')">✕</button>
@@ -522,27 +549,29 @@ function renderPeople() {
 
 function renderPersonSelect() {
   const el = document.getElementById('sel-person');
-  if (!state.people.length) { el.innerHTML = `<option value="">— Add people first —</option>`; return; }
-  el.innerHTML = state.people.map(p => `<option value="${p.id}">${esc(p.name)}</option>`).join('');
+  const people = getPeople();
+  if (!people.length) { el.innerHTML = `<option value="">— Add people first —</option>`; return; }
+  el.innerHTML = people.map(p => `<option value="${p.id}">${esc(p.name)}</option>`).join('');
 }
 
 function addPerson() {
   const inp = document.getElementById('inp-name');
   const name = inp.value.trim();
   if (!name) return;
-  if (state.people.find(p => p.name.toLowerCase() === name.toLowerCase())) { toast('Already exists!', true); return; }
-  state.people.push({ id: uid(), name });
+  const people = getPeople();
+  if (people.find(p => p.name.toLowerCase() === name.toLowerCase())) { toast('Already exists!', true); return; }
+  const id = uid();
+  dbSet(`sidework/people/${id}`, { id, name });
   inp.value = '';
-  save(); renderAll();
   toast('✓ Added ' + name);
 }
 
 function removePerson(id) {
-  const p = state.people.find(x => x.id === id);
+  const people = getPeople();
+  const p = people.find(x => x.id === id);
   if (!confirm(`Remove ${p ? p.name : 'this server'}?`)) return;
-  state.people = state.people.filter(x => x.id !== id);
-  delete state.assignments[id];
-  save(); renderAll();
+  dbRemove(`sidework/people/${id}`);
+  dbRemove(`sidework/assignments/${id}`);
 }
 
 // ── ASSIGN ──
@@ -551,17 +580,19 @@ function assignSidework() {
   const sw  = document.getElementById('sel-sidework').value;
   const amt = parseInt(document.getElementById('inp-amt').value) || 1;
   if (!pid) return;
-  state.assignments[pid] = { sidework: sw, amount: sw === 'Silverware' ? amt : null };
-  save(); renderAll();
-  const name = (state.people.find(p => p.id === pid)||{}).name || '';
+  const data = { sidework: sw, amount: sw === 'Silverware' ? amt : null };
+  dbSet(`sidework/assignments/${pid}`, data);
+  const people = getPeople();
+  const name = (people.find(p => p.id === pid)||{}).name || '';
   toast(`✓ Assigned ${name}`);
 }
 
 // ── ASSIGNMENTS LIST ──
 function renderAssignList() {
   const el = document.getElementById('assign-list');
-  if (!state.people.length) { el.innerHTML = `<p style="color:var(--dim);font-size:.8rem;">No servers added yet.</p>`; return; }
-  el.innerHTML = state.people.map(p => {
+  const people = getPeople();
+  if (!people.length) { el.innerHTML = `<p style="color:var(--dim);font-size:.8rem;">No servers added yet.</p>`; return; }
+  el.innerHTML = people.map(p => {
     const label = swLabel(p.id) || '—';
     return `
       <div class="assign-row">
@@ -575,15 +606,16 @@ function renderAssignList() {
   }).join('');
 }
 
-function clearOne(id) { delete state.assignments[id]; save(); renderAll(); }
+function clearOne(id) { dbRemove(`sidework/assignments/${id}`); }
 
 // ── MODAL ──
 let editId = null;
 
 function openModal(id) {
   editId = id;
-  const p = state.people.find(x => x.id === id);
-  const a = state.assignments[id];
+  const people = getPeople();
+  const p = people.find(x => x.id === id);
+  const a = window._state.assignments && window._state.assignments[id];
   document.getElementById('modal-name').textContent = p ? p.name : '';
   const sel = document.getElementById('modal-sel');
   sel.value = a ? a.sidework : 'Section 1';
@@ -604,8 +636,7 @@ function saveEdit() {
   if (!editId) return;
   const sw  = document.getElementById('modal-sel').value;
   const amt = parseInt(document.getElementById('modal-amt').value) || 1;
-  state.assignments[editId] = { sidework: sw, amount: sw === 'Silverware' ? amt : null };
-  save(); renderAll();
+  dbSet(`sidework/assignments/${editId}`, { sidework: sw, amount: sw === 'Silverware' ? amt : null });
   document.getElementById('modal').classList.add('hidden');
   document.body.style.overflow = '';
   editId = null;
@@ -615,32 +646,48 @@ function saveEdit() {
 // ── RESET ──
 function clearAssignments() {
   if (!confirm('Clear all sidework? People stay.')) return;
-  state.assignments = {};
-  save(); renderAll(); toast('✓ Assignments cleared');
+  dbRemove('sidework/assignments');
+  toast('✓ Assignments cleared');
 }
 
 function clearAll() {
   if (!confirm('Remove everyone and all assignments?')) return;
-  state = { people: [], assignments: {} };
-  save(); renderAll(); toast('✓ Reset complete');
+  dbRemove('sidework/people');
+  dbRemove('sidework/assignments');
+  toast('✓ Reset complete');
 }
 
-// ── RENDER ALL ──
-function renderAll() {
-  renderBoard();
-  if (adminUnlocked) { renderPeople(); renderPersonSelect(); renderAssignList(); }
+// ── RENDER ──
+function renderAdminParts() {
+  renderPeople();
+  renderPersonSelect();
+  renderAssignList();
 }
+
+window.renderAll = function() {
+  // hide connecting overlay once data arrives
+  document.getElementById('connecting').classList.add('hidden');
+  renderBoard();
+  if (adminUnlocked) renderAdminParts();
+};
 
 // ── KEYBOARD ──
 document.getElementById('inp-name').addEventListener('keydown', e => { if (e.key === 'Enter') addPerson(); });
 document.getElementById('gate-pw').addEventListener('keydown', e => { if (e.key === 'Enter') gateLogin(); });
 
 // ── INIT ──
-load();
 tick();
 setInterval(tick, 1000);
-renderBoard(); // public board always loads
-showAdminGate(); // admin starts locked
+showAdminGate();
+
+// timeout if Firebase never connects
+setTimeout(() => {
+  if (!window._dbReady) {
+    document.querySelector('#connecting p').textContent = 'Could not connect.';
+    document.getElementById('connect-err').style.display = 'block';
+    document.getElementById('connect-err').textContent = 'Firebase not configured yet. Follow setup instructions.';
+  }
+}, 6000);
 </script>
 </body>
 </html>
