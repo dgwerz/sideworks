@@ -1,120 +1,285 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>DinoLand Café — Sidework Board</title>
-  <link rel="stylesheet" href="style.css" />
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<title>🦕 DinoLand Sidework</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap');
+
+:root {
+  --bg:     #161310;
+  --surf:   #211d18;
+  --surf2:  #2a2420;
+  --border: #3a3228;
+  --bord2:  #4d4438;
+  --amber:  #f5a623;
+  --green:  #4ade80;
+  --blue:   #60a5fa;
+  --purple: #c084fc;
+  --teal:   #2dd4bf;
+  --orange: #fb923c;
+  --violet: #a78bfa;
+  --red:    #f87171;
+  --text:   #f0e8d8;
+  --muted:  #9a8a72;
+  --dim:    #5c5040;
+  --r:      12px;
+  --rs:     8px;
+  --safe-b: env(safe-area-inset-bottom, 0px);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html { background: var(--bg); }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  min-height: 100dvh; font-size: 15px;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
+}
+
+/* ── HEADER ── */
+header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 16px 12px;
+  padding-top: max(14px, env(safe-area-inset-top, 14px));
+  background: var(--surf); border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 50;
+}
+.logo { font-size: 1.1rem; font-weight: 700; color: var(--amber); }
+.logo span { font-size: 0.68rem; color: var(--muted); font-weight: 500; display: block; letter-spacing: .5px; text-transform: uppercase; }
+.clock { font-family: 'IBM Plex Mono', monospace; font-size: 1.05rem; font-weight: 600; color: var(--amber); text-align: right; line-height: 1.2; }
+.clock small { font-size: 0.62rem; color: var(--muted); display: block; font-family: 'DM Sans', sans-serif; font-weight: 400; }
+
+/* ── TABS ── */
+.tabs {
+  display: grid; grid-template-columns: 1fr 1fr;
+  background: var(--surf); border-bottom: 1px solid var(--border);
+  position: sticky; top: 62px; z-index: 49;
+}
+.tab {
+  padding: 11px 0; background: none; border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--muted); font-family: 'DM Sans', sans-serif;
+  font-size: 0.82rem; font-weight: 700; letter-spacing: .4px;
+  text-transform: uppercase; cursor: pointer;
+  transition: color .15s, border-color .15s; margin-bottom: -1px;
+}
+.tab.active { color: var(--amber); border-bottom-color: var(--amber); }
+
+/* ── PAGES ── */
+.page { display: none; padding: 16px; padding-bottom: calc(16px + var(--safe-b)); }
+.page.active { display: block; }
+
+/* ── BOARD ── */
+.board { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+@media (min-width: 500px) { .board { grid-template-columns: repeat(3,1fr); } }
+@media (min-width: 700px) { .board { grid-template-columns: repeat(4,1fr); } }
+
+.card { background: var(--surf); border: 1px solid var(--border); border-radius: var(--r); overflow: hidden; }
+.card-stripe { height: 4px; }
+.card-body { padding: 12px; }
+.card-name { font-weight: 700; font-size: 0.9rem; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.card-lbl { font-size: 0.65rem; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); font-weight: 600; margin-bottom: 6px; }
+.card-badge { display: inline-block; padding: 3px 9px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; border: 1px solid currentColor; }
+.card-empty { color: var(--dim); font-size: 0.78rem; font-style: italic; }
+
+.s-s1{background:var(--amber)}.b-s1{color:var(--amber)}
+.s-s2{background:var(--blue)}.b-s2{color:var(--blue)}
+.s-s3{background:var(--green)}.b-s3{color:var(--green)}
+.s-s4{background:var(--purple)}.b-s4{color:var(--purple)}
+.s-sw{background:var(--orange)}.b-sw{color:var(--orange)}
+.s-sb{background:var(--teal)}.b-sb{color:var(--teal)}
+.s-ws{background:var(--violet)}.b-ws{color:var(--violet)}
+.s-no{background:var(--bord2)}.b-no{color:var(--dim)}
+
+.empty-state { grid-column:1/-1; text-align:center; padding:48px 16px; color:var(--muted); font-size:.88rem; }
+.empty-state .icon { font-size:2.5rem; display:block; margin-bottom:10px; }
+
+/* ── ADMIN LOCKED GATE ── */
+#admin-gate {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 48px 24px; text-align: center;
+}
+#admin-gate .gate-icon { font-size: 2.5rem; margin-bottom: 10px; }
+#admin-gate p { color: var(--muted); font-size: .88rem; margin-bottom: 20px; }
+.gate-box {
+  background: var(--surf); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 20px; width: 100%; max-width: 320px;
+}
+.gate-box h2 { font-size: .8rem; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); margin-bottom: 14px; }
+.gate-error { color: var(--red); font-size: .78rem; margin-top: 8px; min-height: 16px; }
+
+/* ── ADMIN PANEL ── */
+#admin-panel { display: none; }
+
+.admin-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 14px;
+}
+.admin-bar span { font-size: .75rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .5px; }
+
+/* ── SHARED FORM STYLES ── */
+.section { background: var(--surf); border: 1px solid var(--border); border-radius: var(--r); padding: 16px; margin-bottom: 12px; }
+.section-title { font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+
+label { display: block; font-size: .72rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 5px; }
+
+input[type=text], input[type=number], input[type=password], select {
+  width: 100%; padding: 11px 13px;
+  background: var(--surf2); border: 1px solid var(--border);
+  border-radius: var(--rs); color: var(--text);
+  font-family: 'DM Sans', sans-serif; font-size: 1rem;
+  outline: none; -webkit-appearance: none; transition: border-color .15s;
+}
+input:focus, select:focus { border-color: var(--amber); }
+select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%239a8a72' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 13px center; padding-right: 36px;
+}
+
+.field { margin-bottom: 12px; }
+.row { display: flex; gap: 8px; }
+.row input { flex: 1; }
+
+.btn {
+  display: block; width: 100%; padding: 13px; border: none;
+  border-radius: var(--rs); font-family: 'DM Sans', sans-serif;
+  font-size: .95rem; font-weight: 700; cursor: pointer; text-align: center;
+  transition: opacity .15s, transform .1s; -webkit-appearance: none;
+}
+.btn:active { opacity: .8; transform: scale(.98); }
+.btn-amber  { background: var(--amber); color: #161310; }
+.btn-ghost  { background: var(--surf2); color: var(--muted); border: 1px solid var(--border); }
+.btn-red    { background: transparent; color: var(--red); border: 1px solid var(--red); }
+.btn-sm     { display: inline-block; width: auto; padding: 6px 12px; font-size: .78rem; border-radius: 6px; }
+.btn-logout { background: none; border: 1px solid var(--border); color: var(--muted); font-size: .75rem; font-weight: 600; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-family: 'DM Sans', sans-serif; }
+
+.person-list { display: flex; flex-direction: column; gap: 6px; max-height: 200px; overflow-y: auto; }
+.person-row { display: flex; align-items: center; justify-content: space-between; padding: 9px 12px; background: var(--surf2); border-radius: var(--rs); font-size: .88rem; }
+.person-row span { color: var(--text); font-weight: 500; }
+.btn-x { background: none; border: none; color: var(--red); font-size: .9rem; padding: 2px 6px; cursor: pointer; opacity: .7; }
+.btn-x:active { opacity: 1; }
+
+.assign-list { display: flex; flex-direction: column; gap: 6px; }
+.assign-row { display: flex; align-items: center; padding: 10px 12px; background: var(--surf2); border-radius: var(--rs); gap: 10px; }
+.ar-name { flex: 1; font-weight: 600; font-size: .88rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ar-task { font-size: .78rem; color: var(--muted); margin-right: auto; white-space: nowrap; }
+.ar-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+.danger { border-color: rgba(248,113,113,.2); }
+.danger .section-title { color: var(--red); }
+.danger-desc { font-size: .8rem; color: var(--muted); margin-bottom: 8px; }
+
+/* change pw section */
+.changepw-section { background: var(--surf); border: 1px solid var(--border); border-radius: var(--r); padding: 16px; margin-bottom: 12px; }
+.changepw-section .section-title { font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+
+/* ── MODAL ── */
+.modal-backdrop {
+  position: fixed; inset: 0; background: rgba(0,0,0,.75);
+  display: flex; align-items: flex-end; justify-content: center;
+  z-index: 200; padding-bottom: var(--safe-b);
+}
+.modal-backdrop.hidden { display: none; }
+.modal {
+  background: var(--surf); border: 1px solid var(--bord2);
+  border-radius: 18px 18px 0 0;
+  padding: 20px 20px calc(20px + var(--safe-b));
+  width: 100%; max-width: 480px;
+}
+.modal h3 { font-size: 1rem; font-weight: 700; margin-bottom: 4px; }
+.modal-name { color: var(--amber); font-size: .88rem; font-weight: 600; margin-bottom: 16px; }
+.modal-btns { display: flex; gap: 8px; margin-top: 14px; }
+.modal-btns .btn { flex: 1; }
+
+/* ── TOAST ── */
+.toast {
+  position: fixed; bottom: calc(20px + var(--safe-b)); left: 50%; transform: translateX(-50%);
+  background: var(--green); color: #161310; font-weight: 700; font-size: .85rem;
+  padding: 10px 20px; border-radius: 20px; z-index: 300;
+  opacity: 0; transition: opacity .2s; white-space: nowrap; pointer-events: none;
+}
+.toast.show { opacity: 1; }
+.toast.err  { background: var(--red); color: #fff; }
+
+.hidden { display: none !important; }
+</style>
 </head>
 <body>
 
-  <!-- HEADER -->
-  <header>
-    <div class="header-left">
-      <span class="logo">🦕 DinoLand Café</span>
-      <span class="subtitle">Sidework Board</span>
-    </div>
-    <div class="header-right">
-      <div class="clock-block">
-        <div id="clock" class="clock">--:-- --</div>
-        <div id="date-display" class="date-label">Loading...</div>
+<!-- HEADER -->
+<header>
+  <div class="logo">🦕 DinoLand Café <span>Sidework Board</span></div>
+  <div class="clock">
+    <span id="clk">--:-- --</span>
+    <small id="clk-date">Loading…</small>
+  </div>
+</header>
+
+<!-- TABS -->
+<nav class="tabs">
+  <button class="tab active" data-tab="board">📋 Board</button>
+  <button class="tab" data-tab="admin">⚙️ Admin</button>
+</nav>
+
+<!-- BOARD (public) -->
+<div class="page active" id="page-board">
+  <div class="board" id="board"></div>
+</div>
+
+<!-- ADMIN TAB -->
+<div class="page" id="page-admin">
+
+  <!-- GATE: shown when locked -->
+  <div id="admin-gate">
+    <div class="gate-icon">🔒</div>
+    <p>Admin only. Enter password to make changes.</p>
+    <div class="gate-box">
+      <h2>Admin Login</h2>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" id="gate-pw" placeholder="Enter password" autocomplete="current-password"/>
       </div>
+      <button class="btn btn-amber" onclick="gateLogin()">Unlock Admin</button>
+      <div class="gate-error" id="gate-error"></div>
     </div>
-  </header>
+  </div>
 
-  <!-- TAB NAV -->
-  <nav class="tab-nav">
-    <button class="tab-btn active" data-tab="board">📋 Board</button>
-    <button class="tab-btn" data-tab="admin">⚙️ Admin</button>
-  </nav>
+  <!-- PANEL: shown when unlocked -->
+  <div id="admin-panel">
 
-  <!-- BOARD TAB -->
-  <main id="tab-board" class="tab-content active">
-    <div id="board-grid" class="board-grid">
-      <!-- Rendered by JS -->
+    <div class="admin-bar">
+      <span>🛠 Admin Panel</span>
+      <button class="btn-logout" onclick="gateLogout()">Lock 🔒</button>
     </div>
-  </main>
 
-  <!-- ADMIN TAB -->
-  <main id="tab-admin" class="tab-content">
-    <div class="admin-layout">
-
-      <!-- PEOPLE MANAGEMENT -->
-      <section class="admin-card">
-        <h2>👥 People</h2>
-        <div class="input-row">
-          <input type="text" id="new-person-name" placeholder="Server name" maxlength="30" />
-          <button onclick="addPerson()">Add</button>
+    <!-- Add Server -->
+    <div class="section">
+      <div class="section-title">👥 Add Server</div>
+      <div class="field">
+        <label>Name</label>
+        <div class="row">
+          <input type="text" id="inp-name" placeholder="Server name" maxlength="30" autocomplete="off" autocorrect="off"/>
+          <button class="btn btn-amber btn-sm" style="width:auto;padding:11px 18px;" onclick="addPerson()">Add</button>
         </div>
-        <ul id="people-list" class="item-list">
-          <!-- Rendered by JS -->
-        </ul>
-      </section>
-
-      <!-- ASSIGN SIDEWORK -->
-      <section class="admin-card">
-        <h2>🎯 Assign Sidework</h2>
-        <div class="form-group">
-          <label>Person</label>
-          <select id="assign-person"></select>
-        </div>
-        <div class="form-group">
-          <label>Sidework</label>
-          <select id="assign-sidework">
-            <option value="Section 1">Section 1</option>
-            <option value="Section 2">Section 2</option>
-            <option value="Section 3">Section 3</option>
-            <option value="Section 4">Section 4</option>
-            <option value="Silverware">Silverware</option>
-            <option value="No Sidework">No Sidework</option>
-            <option value="Salad Bar">Salad Bar</option>
-            <option value="Waitstation">Waitstation</option>
-          </select>
-        </div>
-        <div class="form-group silverware-group" id="silverware-amount-group" style="display:none;">
-          <label>Amount</label>
-          <input type="number" id="silverware-amount" min="1" max="20" value="1" placeholder="Sets" />
-        </div>
-        <button class="btn-primary" onclick="assignSidework()">Assign</button>
-      </section>
-
-      <!-- MANAGE ASSIGNMENTS -->
-      <section class="admin-card wide">
-        <h2>📝 Current Assignments</h2>
-        <table id="assignments-table">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Sidework</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="assignments-body">
-            <!-- Rendered by JS -->
-          </tbody>
-        </table>
-      </section>
-
-      <!-- DANGER ZONE -->
-      <section class="admin-card danger-zone">
-        <h2>⚠️ Reset</h2>
-        <p>Clear all assignments for today (keeps people).</p>
-        <button class="btn-danger" onclick="clearAllAssignments()">Clear All Assignments</button>
-        <p>Remove all people and assignments entirely.</p>
-        <button class="btn-danger" onclick="clearEverything()">Clear Everything</button>
-      </section>
-
+      </div>
+      <div id="people-list" class="person-list"></div>
     </div>
-  </main>
 
-  <!-- EDIT MODAL -->
-  <div id="edit-modal" class="modal hidden">
-    <div class="modal-box">
-      <h3>Edit Sidework</h3>
-      <p id="edit-modal-person" class="modal-person"></p>
-      <div class="form-group">
+    <!-- Assign -->
+    <div class="section">
+      <div class="section-title">🎯 Assign Sidework</div>
+      <div class="field">
+        <label>Server</label>
+        <select id="sel-person"></select>
+      </div>
+      <div class="field">
         <label>Sidework</label>
-        <select id="edit-sidework-select">
+        <select id="sel-sidework" onchange="toggleAmt(this.value,'sw-amt')">
           <option value="Section 1">Section 1</option>
           <option value="Section 2">Section 2</option>
           <option value="Section 3">Section 3</option>
@@ -125,17 +290,357 @@
           <option value="Waitstation">Waitstation</option>
         </select>
       </div>
-      <div class="form-group" id="edit-silverware-group" style="display:none;">
-        <label>Amount</label>
-        <input type="number" id="edit-silverware-amount" min="1" max="20" value="1" />
+      <div class="field hidden" id="sw-amt">
+        <label>Amount (sets)</label>
+        <input type="number" id="inp-amt" min="1" max="50" value="1"/>
       </div>
-      <div class="modal-actions">
-        <button class="btn-primary" onclick="saveEdit()">Save</button>
-        <button class="btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-amber" onclick="assignSidework()">Assign</button>
+    </div>
+
+    <!-- All Assignments -->
+    <div class="section">
+      <div class="section-title">📝 All Assignments</div>
+      <div id="assign-list" class="assign-list"></div>
+    </div>
+
+    <!-- Change Password -->
+    <div class="changepw-section">
+      <div class="section-title">🔑 Change Password</div>
+      <div class="field">
+        <label>Current Password</label>
+        <input type="password" id="cp-cur" placeholder="Current password"/>
       </div>
+      <div class="field">
+        <label>New Password</label>
+        <input type="password" id="cp-new" placeholder="New password"/>
+      </div>
+      <div class="field">
+        <label>Confirm New Password</label>
+        <input type="password" id="cp-cfm" placeholder="Repeat new password"/>
+      </div>
+      <button class="btn btn-ghost" onclick="changePassword()">Save New Password</button>
+      <div class="gate-error" id="cp-error"></div>
+    </div>
+
+    <!-- Reset -->
+    <div class="section danger">
+      <div class="section-title">⚠️ Reset</div>
+      <p class="danger-desc">Clear today's sidework (keeps people).</p>
+      <button class="btn btn-red" style="margin-bottom:10px" onclick="clearAssignments()">Clear All Assignments</button>
+      <p class="danger-desc">Remove everyone and start fresh.</p>
+      <button class="btn btn-red" onclick="clearAll()">Clear Everything</button>
+    </div>
+
+  </div><!-- /admin-panel -->
+</div><!-- /page-admin -->
+
+<!-- EDIT MODAL -->
+<div class="modal-backdrop hidden" id="modal" onclick="closeModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h3>Edit Sidework</h3>
+    <p class="modal-name" id="modal-name"></p>
+    <div class="field">
+      <label>Sidework</label>
+      <select id="modal-sel" onchange="toggleAmt(this.value,'modal-sw-amt')">
+        <option value="Section 1">Section 1</option>
+        <option value="Section 2">Section 2</option>
+        <option value="Section 3">Section 3</option>
+        <option value="Section 4">Section 4</option>
+        <option value="Silverware">Silverware</option>
+        <option value="No Sidework">No Sidework</option>
+        <option value="Salad Bar">Salad Bar</option>
+        <option value="Waitstation">Waitstation</option>
+      </select>
+    </div>
+    <div class="field hidden" id="modal-sw-amt">
+      <label>Amount (sets)</label>
+      <input type="number" id="modal-amt" min="1" max="50" value="1"/>
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-amber" onclick="saveEdit()">Save</button>
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
     </div>
   </div>
+</div>
 
-  <script src="app.js"></script>
+<div class="toast" id="toast"></div>
+
+<script>
+// ── PASSWORD ──
+const DEFAULT_PW = '1234';
+function getPW() { return localStorage.getItem('dino_pw') || DEFAULT_PW; }
+function setPW(p) { localStorage.setItem('dino_pw', p); }
+
+// ── ADMIN SESSION (tab-only) ──
+let adminUnlocked = false;
+
+function gateLogin() {
+  const pw = document.getElementById('gate-pw').value;
+  const err = document.getElementById('gate-error');
+  if (pw === getPW()) {
+    adminUnlocked = true;
+    document.getElementById('gate-pw').value = '';
+    err.textContent = '';
+    showAdminPanel();
+  } else {
+    err.textContent = 'Wrong password.';
+    document.getElementById('gate-pw').value = '';
+  }
+}
+
+function gateLogout() {
+  adminUnlocked = false;
+  showAdminGate();
+}
+
+function showAdminPanel() {
+  document.getElementById('admin-gate').style.display = 'none';
+  document.getElementById('admin-panel').style.display = 'block';
+  renderAll();
+}
+
+function showAdminGate() {
+  document.getElementById('admin-gate').style.display = 'flex';
+  document.getElementById('admin-panel').style.display = 'none';
+}
+
+function changePassword() {
+  const cur = document.getElementById('cp-cur').value;
+  const nw  = document.getElementById('cp-new').value.trim();
+  const cfm = document.getElementById('cp-cfm').value.trim();
+  const err = document.getElementById('cp-error');
+  if (cur !== getPW())    { err.textContent = 'Current password is wrong.'; return; }
+  if (!nw)                { err.textContent = 'New password cannot be empty.'; return; }
+  if (nw !== cfm)         { err.textContent = "Passwords don't match."; return; }
+  setPW(nw);
+  document.getElementById('cp-cur').value = '';
+  document.getElementById('cp-new').value = '';
+  document.getElementById('cp-cfm').value = '';
+  err.textContent = '';
+  toast('✓ Password changed!');
+}
+
+// ── SIDEWORK CONFIG ──
+const SW_META = {
+  'Section 1':   { stripe:'s-s1', badge:'b-s1', icon:'①' },
+  'Section 2':   { stripe:'s-s2', badge:'b-s2', icon:'②' },
+  'Section 3':   { stripe:'s-s3', badge:'b-s3', icon:'③' },
+  'Section 4':   { stripe:'s-s4', badge:'b-s4', icon:'④' },
+  'Silverware':  { stripe:'s-sw', badge:'b-sw', icon:'🍴' },
+  'No Sidework': { stripe:'s-no', badge:'b-no', icon:'✓'  },
+  'Salad Bar':   { stripe:'s-sb', badge:'b-sb', icon:'🥗' },
+  'Waitstation': { stripe:'s-ws', badge:'b-ws', icon:'🍽️' },
+};
+
+// ── STATE ──
+let state = { people: [], assignments: {} };
+function save() { try { localStorage.setItem('dino_sw_v2', JSON.stringify(state)); } catch(e) {} }
+function load() { try { const d = localStorage.getItem('dino_sw_v2'); if (d) state = JSON.parse(d); } catch(e) {} }
+
+// ── CLOCK ──
+function tick() {
+  const now = new Date();
+  const t = now.toLocaleTimeString('en-US', { timeZone:'America/New_York', hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:true });
+  const d = now.toLocaleDateString('en-US', { timeZone:'America/New_York', weekday:'short', month:'short', day:'numeric' });
+  document.getElementById('clk').textContent = t;
+  document.getElementById('clk-date').textContent = d + ' · Myrtle Beach';
+}
+
+// ── TABS ──
+document.querySelectorAll('.tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('page-' + btn.dataset.tab).classList.add('active');
+    // if switching to admin, show correct view
+    if (btn.dataset.tab === 'admin') {
+      adminUnlocked ? showAdminPanel() : showAdminGate();
+    }
+  });
+});
+
+// ── HELPERS ──
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function uid() { return Math.random().toString(36).slice(2,9); }
+
+let toastTimer;
+function toast(msg, isErr) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show' + (isErr ? ' err' : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 1800);
+}
+
+function toggleAmt(val, groupId) {
+  document.getElementById(groupId).classList.toggle('hidden', val !== 'Silverware');
+}
+
+function swLabel(id) {
+  const a = state.assignments[id];
+  if (!a) return null;
+  if (a.sidework === 'Silverware' && a.amount) return `Silverware ×${a.amount}`;
+  return a.sidework;
+}
+
+// ── BOARD ──
+function renderBoard() {
+  const el = document.getElementById('board');
+  if (!state.people.length) {
+    el.innerHTML = `<div class="empty-state"><span class="icon">🦕</span>No servers added yet.</div>`;
+    return;
+  }
+  el.innerHTML = state.people.map(p => {
+    const a = state.assignments[p.id];
+    const meta = a ? SW_META[a.sidework] : null;
+    const label = swLabel(p.id);
+    return `
+      <div class="card">
+        <div class="card-stripe ${meta ? meta.stripe : 's-no'}"></div>
+        <div class="card-body">
+          <div class="card-name">${esc(p.name)}</div>
+          ${a
+            ? `<div class="card-lbl">Sidework</div>
+               <span class="card-badge ${meta ? meta.badge : 'b-no'}">${meta ? meta.icon+' ':''} ${esc(label)}</span>`
+            : `<div class="card-empty">Not assigned</div>`}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ── PEOPLE ──
+function renderPeople() {
+  const el = document.getElementById('people-list');
+  if (!state.people.length) { el.innerHTML = `<p style="color:var(--dim);font-size:.8rem;padding:4px 0">No servers yet.</p>`; return; }
+  el.innerHTML = state.people.map(p => `
+    <div class="person-row">
+      <span>${esc(p.name)}</span>
+      <button class="btn-x" onclick="removePerson('${p.id}')">✕</button>
+    </div>`).join('');
+}
+
+function renderPersonSelect() {
+  const el = document.getElementById('sel-person');
+  if (!state.people.length) { el.innerHTML = `<option value="">— Add people first —</option>`; return; }
+  el.innerHTML = state.people.map(p => `<option value="${p.id}">${esc(p.name)}</option>`).join('');
+}
+
+function addPerson() {
+  const inp = document.getElementById('inp-name');
+  const name = inp.value.trim();
+  if (!name) return;
+  if (state.people.find(p => p.name.toLowerCase() === name.toLowerCase())) { toast('Already exists!', true); return; }
+  state.people.push({ id: uid(), name });
+  inp.value = '';
+  save(); renderAll();
+  toast('✓ Added ' + name);
+}
+
+function removePerson(id) {
+  const p = state.people.find(x => x.id === id);
+  if (!confirm(`Remove ${p ? p.name : 'this server'}?`)) return;
+  state.people = state.people.filter(x => x.id !== id);
+  delete state.assignments[id];
+  save(); renderAll();
+}
+
+// ── ASSIGN ──
+function assignSidework() {
+  const pid = document.getElementById('sel-person').value;
+  const sw  = document.getElementById('sel-sidework').value;
+  const amt = parseInt(document.getElementById('inp-amt').value) || 1;
+  if (!pid) return;
+  state.assignments[pid] = { sidework: sw, amount: sw === 'Silverware' ? amt : null };
+  save(); renderAll();
+  const name = (state.people.find(p => p.id === pid)||{}).name || '';
+  toast(`✓ Assigned ${name}`);
+}
+
+// ── ASSIGNMENTS LIST ──
+function renderAssignList() {
+  const el = document.getElementById('assign-list');
+  if (!state.people.length) { el.innerHTML = `<p style="color:var(--dim);font-size:.8rem;">No servers added yet.</p>`; return; }
+  el.innerHTML = state.people.map(p => {
+    const label = swLabel(p.id) || '—';
+    return `
+      <div class="assign-row">
+        <span class="ar-name">${esc(p.name)}</span>
+        <span class="ar-task">${esc(label)}</span>
+        <div class="ar-actions">
+          <button class="btn btn-ghost btn-sm" onclick="openModal('${p.id}')">Edit</button>
+          <button class="btn btn-red btn-sm" onclick="clearOne('${p.id}')">✕</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function clearOne(id) { delete state.assignments[id]; save(); renderAll(); }
+
+// ── MODAL ──
+let editId = null;
+
+function openModal(id) {
+  editId = id;
+  const p = state.people.find(x => x.id === id);
+  const a = state.assignments[id];
+  document.getElementById('modal-name').textContent = p ? p.name : '';
+  const sel = document.getElementById('modal-sel');
+  sel.value = a ? a.sidework : 'Section 1';
+  document.getElementById('modal-amt').value = (a && a.amount) ? a.amount : 1;
+  toggleAmt(sel.value, 'modal-sw-amt');
+  document.getElementById('modal').classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal(e) {
+  if (e && e.target !== document.getElementById('modal')) return;
+  document.getElementById('modal').classList.add('hidden');
+  document.body.style.overflow = '';
+  editId = null;
+}
+
+function saveEdit() {
+  if (!editId) return;
+  const sw  = document.getElementById('modal-sel').value;
+  const amt = parseInt(document.getElementById('modal-amt').value) || 1;
+  state.assignments[editId] = { sidework: sw, amount: sw === 'Silverware' ? amt : null };
+  save(); renderAll();
+  document.getElementById('modal').classList.add('hidden');
+  document.body.style.overflow = '';
+  editId = null;
+  toast('✓ Updated');
+}
+
+// ── RESET ──
+function clearAssignments() {
+  if (!confirm('Clear all sidework? People stay.')) return;
+  state.assignments = {};
+  save(); renderAll(); toast('✓ Assignments cleared');
+}
+
+function clearAll() {
+  if (!confirm('Remove everyone and all assignments?')) return;
+  state = { people: [], assignments: {} };
+  save(); renderAll(); toast('✓ Reset complete');
+}
+
+// ── RENDER ALL ──
+function renderAll() {
+  renderBoard();
+  if (adminUnlocked) { renderPeople(); renderPersonSelect(); renderAssignList(); }
+}
+
+// ── KEYBOARD ──
+document.getElementById('inp-name').addEventListener('keydown', e => { if (e.key === 'Enter') addPerson(); });
+document.getElementById('gate-pw').addEventListener('keydown', e => { if (e.key === 'Enter') gateLogin(); });
+
+// ── INIT ──
+load();
+tick();
+setInterval(tick, 1000);
+renderBoard(); // public board always loads
+showAdminGate(); // admin starts locked
+</script>
 </body>
 </html>
